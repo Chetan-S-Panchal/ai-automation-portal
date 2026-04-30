@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
+import DataConversion from "./DataConversion";
+
 
 function App() {
   const [activeTab, setActiveTab] = useState("conversion");
@@ -7,7 +9,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case "conversion":
-        return <div>Data Conversion Module (Coming Soon)</div>;
+        return <DataConversion />;
       case "document":
         return <div>Bulk Document Generation (Coming Soon)</div>;
       case "report":
@@ -22,6 +24,8 @@ function App() {
   return (
     <div className="container">
       <h1 className="title">AI Automation Portal</h1>
+      <p className="subtitle">Insight-driven automation for your business</p>          
+      <p className="tagline">Try before you pay</p>           
 
       <div className="tabs">
         <button
