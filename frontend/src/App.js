@@ -23,9 +23,9 @@ function App() {
 
   return (
     <div className="container">
+      
       <h1 className="title">AI Automation Portal</h1>
-      <p className="subtitle">Insight-driven automation for your business</p>          
-      <p className="tagline">Try before you pay</p>           
+      <p className="subtitle">Secure • Fast • Reliable Data Processing</p>
 
       <div className="tabs">
         <button

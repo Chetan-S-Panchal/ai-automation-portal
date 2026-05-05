@@ -1,173 +1,175 @@
+/* GLOBAL */
 body {
+  margin: 0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: #f4f6f9;
-  margin: 0;
 }
 
-/* FULL PAGE WITHOUT SCROLL ISSUE */
+/* MAIN CONTAINER */
 .container {
   width: 100%;
   height: 100vh;
-  box-sizing: border-box;
   padding: 10px;
+  box-sizing: border-box;
   background: #ffffff;
   border: 1px solid #d3d3d3;
   display: flex;
   flex-direction: column;
 }
 
+/* HEADER */
 .title {
   text-align: center;
-  margin: 10px 0 15px;
-  color: #333;
+  margin: 5px 0 5px;
+  color: #222;
   font-size: 26px;
 }
 
-/* TABS */
+.subtitle {
+  text-align: center;
+  font-size: 18px;     /* bigger */
+  color: #007bff;      /* sky blue */
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* MAIN TABS */
 .tabs {
   display: flex;
   gap: 5px;
   border-bottom: 1px solid #cfcfcf;
 }
 
-/* DEFAULT TAB */
 .tabs button {
-  padding: 10px 18px;
+  padding: 8px 16px;
   border: 1px solid #cfcfcf;
   border-bottom: none;
   background: #f5f5f5;
   cursor: pointer;
-  font-weight: 500;
-  color: #444;
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  transition: all 0.2s ease;
 }
 
-/* HOVER */
-.tabs button:hover {
-  background: #e6f2ff;
-}
-
-/* ✅ ACTIVE TAB (CLEARLY VISIBLE) */
 .tabs button.active {
-  background: #cce5ff !important;
+  background: #cce5ff;
+  font-weight: bold;
   color: #004085;
-  font-weight: 600;
 }
 
 /* CONTENT AREA */
 .content {
-  flex: 1; /* takes remaining space */
+  flex: 1;
   border: 1px solid #cfcfcf;
-  padding: 20px;
+  padding: 10px;
   background: #fafafa;
-  overflow: auto; /* only content scrolls if needed */
+
+  overflow-y: auto;   /* only vertical scroll */
+  overflow-x: hidden; /* remove side scroll */
 }
 
-
-/**/
-
+/* SUB TABS */
 .subtabs {
   display: flex;
   gap: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .subtabs button {
-  padding: 8px 16px;
+  padding: 6px 14px;
   border: 1px solid #ccc;
   background: #f5f5f5;
   cursor: pointer;
 }
 
 .subtabs button.active {
-  background: #cce5ff;
+  background: #007bff;
+  color: white;
   font-weight: bold;
 }
 
+/* PANELS */
 .panel {
-  border: 1px solid #ddd;
-  padding: 15px;
-  margin-bottom: 15px;
-  background: #fafafa;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* DISCLAIMER*/
+.disclaimer-box {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.disclaimer-text {
+  flex: 1;                 /* take full width */
+  max-height: 60px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+.disclaimer-box label {
+  white-space: nowrap;     /* keep "I Agree" visible */
+}
+
+/* FILE INFO */
 .file-info {
-  margin-top: 10px;
+  margin-top: 5px;
+  font-size: 13px;
 }
 
+/* BUTTONS (UNIFIED STYLE) */
+.btn {
+  padding: 8px 14px;
+  margin-right: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+/* FREE BUTTON */
 .primary {
   background: #007bff;
   color: white;
-  padding: 10px 15px;
-  margin-right: 10px;
-  border: none;
-  cursor: pointer;
 }
 
+/* PAID BUTTON */
 .secondary {
-  background: #28a745;
+  background: #ffc107;
+  color: black;
+}
+
+/* RESET / EXIT */
+.neutral {
+  background: #6c757d;
   color: white;
-  padding: 10px 15px;
-  border: none;
-  cursor: pointer;
 }
 
-
-/**/
-
-.subtitle {
-  margin: 0;
-  color: #555;
+/* BUTTON GROUP */
+.buttons {
+  margin-top: 10px;
 }
 
-.tagline {
-  font-weight: bold;
-  color: #007bff;
-  margin-bottom: 15px;
-}
-
-.hint {
-  font-size: 12px;
-  color: #666;
-  margin-left: 20px;
-}
-
+/* SMALL TEXT */
 .note {
   font-size: 12px;
-  color: #888;
+  color: #666;
 }
 
 .error {
   color: red;
 }
 
-.buttons {
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+input[type="file"] {
   margin-top: 10px;
-}
-
-.pricing {
-  margin-top: 10px;
-}
-
-.payment-box {
-  border: 1px dashed #aaa;
-  padding: 10px;
-  margin-top: 5px;
-}
-
-.subtitle {
-  display: block;
-  font-size: 16px;
-  color: #555;
-  margin: 0;
-}
-
-.tagline {
-  display: block;
-  font-size: 14px;
-  color: #007bff;
-  font-weight: 600;
   margin-bottom: 10px;
 }
