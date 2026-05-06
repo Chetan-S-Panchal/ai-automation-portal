@@ -108,6 +108,8 @@ body {
   max-height: 60px;
   overflow-y: auto;
   font-size: 13px;
+  margin: 2px 0;   /* reduce spacing */
+  line-height: 0.2;
 }
 
 .disclaimer-box label {
@@ -151,6 +153,14 @@ body {
 /* BUTTON GROUP */
 .buttons {
   margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.btn:disabled {
+  background: #d3d3d3 !important;  /* light grey */
+  color: #666 !important;
+  cursor: not-allowed;
 }
 
 /* SMALL TEXT */
