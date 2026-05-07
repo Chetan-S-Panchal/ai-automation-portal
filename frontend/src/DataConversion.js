@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import "./App.css";
+import * as XLSX from "xlsx";
 
 export default function DataConversion() {
   const [subTab, setSubTab] = useState("manual");
