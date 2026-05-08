@@ -6,12 +6,20 @@ export default function DataConversion() {
   const [subTab, setSubTab] = useState("manual");
   const [conversionType, setConversionType] = useState("");
   const [file, setFile] = useState(null);
+  const [recordCount, setRecordCount] = useState(0);
+  const [previewData, setPreviewData] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [price, setPrice] = useState(0);
   const [agreed, setAgreed] = useState(false);
 
   const FREE_LIMIT = 50;
-  const MOCK_RECORDS = 120;
 
-  const recordCount = file ? MOCK_RECORDS : 0;
+  const pricingRules = [
+    { min: 1, max: 50, price: 0 },
+    { min: 51, max: 500, price: 99 },
+    { min: 501, max: 2000, price: 299 }
+  ];
+
   const showPaid = recordCount > FREE_LIMIT;
 
   const fileInputRef = useRef();
@@ -22,12 +30,60 @@ export default function DataConversion() {
 
     setFile({
       name: f.name,
-      path: e.target.value
+      //path: e.target.value
+      path: f.name
     });
+
+    const reader = new FileReader();
+
+    reader.onload = (evt) => {
+      const data = evt.target.result;
+
+      const workbook = XLSX.read(data, { type: "binary" });
+
+      const sheetName = workbook.SheetNames[0];
+
+      const worksheet = workbook.Sheets[sheetName];
+
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      // RECORD COUNT
+      setRecordCount(jsonData.length);
+
+      // PREVIEW DATA (FIRST 10 ROWS)
+      setPreviewData(jsonData.slice(0, 10));
+
+      // COLUMN HEADERS
+      if (jsonData.length > 0) {
+        setColumns(Object.keys(jsonData[0]));
+      }
+
+      // PRICE CALCULATION
+      let calculatedPrice = 0;
+
+      pricingRules.forEach((rule) => {
+        if (
+          jsonData.length >= rule.min &&
+          jsonData.length <= rule.max
+        ) {
+          calculatedPrice = rule.price;
+        }
+      });
+
+      setPrice(calculatedPrice);
+    };
+
+    reader.readAsBinaryString(f);
   };
 
   const removeFile = () => {
     setFile(null);
+
+    setPreviewData([]);
+    setColumns([]);
+    setRecordCount(0);
+    setPrice(0);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -37,6 +93,15 @@ export default function DataConversion() {
     setFile(null);
     setConversionType("");
     setAgreed(false);
+
+    setPreviewData([]);
+    setColumns([]);
+    setRecordCount(0);
+    setPrice(0);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const getAcceptedTypes = () => {
@@ -80,18 +145,22 @@ export default function DataConversion() {
           {/* CONVERSION TYPE */}
           <div className="panel radio-group">
 
+            <h3 className="preview-title">
+              Select Data Conversion Type
+            </h3>
+
             <label>
-              <input type="radio" name="conversion" onChange={() => setConversionType("excel-csv")} />
+              <input type="radio" name="conversion" checked={conversionType === "excel-csv"} onChange={() => setConversionType("excel-csv")} />
               Excel → CSV (Convert Excel to CSV)
             </label>
 
             <label>
-              <input type="radio" name="conversion" onChange={() => setConversionType("excel-txt")} />
+              <input type="radio" name="conversion" checked={conversionType === "excel-txt"} onChange={() => setConversionType("excel-txt")} />
               Excel → TXT (Convert Excel to Text)
             </label>
 
             <label>
-              <input type="radio" name="conversion" onChange={() => setConversionType("csv-excel")} />
+              <input type="radio" name="conversion" checked={conversionType === "csv-excel"} onChange={() => setConversionType("csv-excel")} />
               CSV → Excel (Convert CSV to Excel)
             </label>
 
@@ -102,6 +171,7 @@ export default function DataConversion() {
             <div className="panel">
 
               <button
+                type="button"
                 className="btn primary"
                 onClick={() => fileInputRef.current.click()}
               >
@@ -120,7 +190,12 @@ export default function DataConversion() {
                 <>
                   <div className="file-info">
                     <p><b>Import File:</b> {file.path}</p>
-                    <p>No. of Records: {recordCount}</p>
+                    <p>
+                      <b>No. of Records:</b> {recordCount}
+                      <span className="small-note">
+                        {" "} (1st Row Considered as Header row excluded in Row Count)
+                      </span>
+                    </p>
                   </div>
 
                   <button className="btn neutral" onClick={removeFile}>
@@ -129,6 +204,41 @@ export default function DataConversion() {
                 </>
               )}
 
+            </div>
+          )}
+          {/* DATA PREVIEW */}
+          {previewData.length > 0 && (
+            <div className="panel">
+
+              <h3 className="preview-title">
+                Preview Data
+                <span className="small-note"> (Max 20 records)</span>
+              </h3>
+
+              <div className="table-container">
+
+                <table className="preview-table">
+
+                  <thead>
+                    <tr>
+                      {columns.map((col) => (
+                        <th key={col}>{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {previewData.map((row, index) => (
+                      <tr key={index}>
+                        {columns.map((col) => (
+                          <td key={col}>{row[col]}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+
+                </table>
+              </div>
             </div>
           )}
 
@@ -184,24 +294,24 @@ export default function DataConversion() {
                     }
                   }}
                 >
-                  Convert full data for Rs.99/-
+                  Convert full data for Rs.{price}/-
                 </button>
               )}
 
             </div>
 
-            
-      )}
 
-      {/* RESET / EXIT */}
-      <div className="panel">
-        <button className="btn neutral" onClick={resetAll}>Reset</button>
-        <button className="btn neutral" onClick={() => window.location.reload()}>Exit</button>
-      </div>
+          )}
 
-    </div>
-  )
-}
+          {/* RESET / EXIT */}
+          <div className="panel">
+            <button className="btn neutral" onClick={resetAll}>Reset</button>
+            <button className="btn neutral" onClick={() => window.location.reload()}>Exit</button>
+          </div>
+
+        </div>
+      )
+      }
     </div >
   );
 }

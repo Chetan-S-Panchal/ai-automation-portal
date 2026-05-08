@@ -58,10 +58,10 @@ body {
 .content {
   flex: 1;
   border: 1px solid #cfcfcf;
-  padding: 10px;
+  padding: 6px 10px;
   background: #fafafa;
 
-  overflow-y: auto;   /* only vertical scroll */
+  overflow-y: hidden;   /* only vertical scroll */
   overflow-x: hidden; /* remove side scroll */
 }
 
@@ -87,7 +87,7 @@ body {
 
 /* PANELS */
 .panel {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   padding: 10px;
   background: #ffffff;
   border: 1px solid #e0e0e0;
@@ -182,4 +182,47 @@ body {
 input[type="file"] {
   margin-top: 10px;
   margin-bottom: 10px;
+}
+
+/**/
+
+.preview-title {
+  margin: 0 0 6px 0;
+}
+
+.small-note {
+  font-size: 12px;
+  color: #666;
+  font-weight: normal;
+}
+
+.preview-table {
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 13px;
+  width: max-content;
+  min-width: 100%;
+}
+
+
+.preview-table th,
+.preview-table td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.preview-table th {
+  background: #e6f2ff;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+h3 {
+  margin-top: 4px;
+  margin-bottom: 6px;
 }
