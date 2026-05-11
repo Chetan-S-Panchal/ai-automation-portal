@@ -61,8 +61,7 @@ body {
   padding: 6px 10px;
   background: #fafafa;
 
-  overflow-y: hidden;   /* only vertical scroll */
-  overflow-x: hidden; /* remove side scroll */
+  overflow: hidden;   /* IMPORTANT */
 }
 
 /* SUB TABS */
@@ -93,6 +92,8 @@ body {
   border: 1px solid #e0e0e0;
   width: 100%;
   box-sizing: border-box;
+
+  overflow: hidden;   /* IMPORTANT */
 }
 
 /* DISCLAIMER*/
@@ -198,19 +199,24 @@ input[type="file"] {
 
 .preview-table {
   border-collapse: collapse;
-  margin-top: 10px;
+  margin-top: 6px;
   font-size: 13px;
-  width: max-content;
-  min-width: 100%;
-}
 
+  min-width: max-content;   /* IMPORTANT */
+  width: max-content;
+}
 
 .preview-table th,
 .preview-table td {
   border: 1px solid #ccc;
-  padding: 6px;
+  padding: 6px 10px;
   white-space: nowrap;
   text-align: left;
+}
+
+.preview-table td,
+.preview-table th {
+  min-width: 120px;
 }
 
 .preview-table th {
@@ -219,10 +225,31 @@ input[type="file"] {
 
 .table-container {
   width: 100%;
-  overflow-x: auto;
+
+  max-height: 150px;   /* fixed preview height */
+
+  overflow-y: auto;    /* vertical scroll inside preview */
+  overflow-x: auto;    /* horizontal scroll for many columns */
+
+  border: 1px solid #d9d9d9;
 }
 
 h3 {
   margin-top: 4px;
   margin-bottom: 6px;
+}
+
+/* DISCLAIMER HEADINGS */
+.disclaimer-heading {
+  color: #007bff;
+  font-weight: 700;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+/* DISCLAIMER TEXT */
+.disclaimer-text p {
+  margin: 3px 0;
+  line-height: 1.3;
+  font-size: 13px;
 }

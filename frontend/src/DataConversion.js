@@ -11,6 +11,8 @@ export default function DataConversion() {
   const [columns, setColumns] = useState([]);
   const [price, setPrice] = useState(0);
   const [agreed, setAgreed] = useState(false);
+  const [sheetName, setSheetName] = useState("");
+
 
   const FREE_LIMIT = 50;
 
@@ -41,17 +43,24 @@ export default function DataConversion() {
 
       const workbook = XLSX.read(data, { type: "binary" });
 
-      const sheetName = workbook.SheetNames[0];
+      const firstSheetName = workbook.SheetNames[0];
 
-      const worksheet = workbook.Sheets[sheetName];
+      setSheetName(firstSheetName);
 
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      
+
+      //const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        defval: ""
+      });
 
       // RECORD COUNT
       setRecordCount(jsonData.length);
 
       // PREVIEW DATA (FIRST 10 ROWS)
-      setPreviewData(jsonData.slice(0, 10));
+      setPreviewData(jsonData.slice(0, 20));
 
       // COLUMN HEADERS
       if (jsonData.length > 0) {
@@ -83,6 +92,7 @@ export default function DataConversion() {
     setColumns([]);
     setRecordCount(0);
     setPrice(0);
+    setSheetName("");
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -98,6 +108,7 @@ export default function DataConversion() {
     setColumns([]);
     setRecordCount(0);
     setPrice(0);
+    setSheetName("");
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -170,13 +181,23 @@ export default function DataConversion() {
           {conversionType && (
             <div className="panel">
 
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => fileInputRef.current.click()}
-              >
-                Choose File
-              </button>
+              <div className="buttons">
+
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  Choose File
+                </button>
+
+                {file && (
+                  <button className="btn neutral" onClick={removeFile}>
+                    Remove File
+                  </button>
+                )}
+
+              </div>
 
               <input
                 type="file"
@@ -187,25 +208,28 @@ export default function DataConversion() {
               />
 
               {file && (
-                <>
-                  <div className="file-info">
-                    <p><b>Import File:</b> {file.path}</p>
-                    <p>
-                      <b>No. of Records:</b> {recordCount}
+                <div className="file-info">
+                  <p>
+                    <b>Import File:</b> {file.path}
+
+                    {sheetName && (
                       <span className="small-note">
-                        {" "} (1st Row Considered as Header row excluded in Row Count)
+                        {" "} (Worksheet: {sheetName})
                       </span>
-                    </p>
-                  </div>
+                    )}
+                  </p>
 
-                  <button className="btn neutral" onClick={removeFile}>
-                    Remove File
-                  </button>
-                </>
+                  <p>
+                    <b>No. of Records:</b> {recordCount}
+                    <span className="small-note">
+                      {" "} (1st Row Considered as Header row excluded in Row Count)
+                    </span>
+                  </p>
+                </div>
               )}
-
             </div>
           )}
+
           {/* DATA PREVIEW */}
           {previewData.length > 0 && (
             <div className="panel">
@@ -247,19 +271,93 @@ export default function DataConversion() {
             <div className="panel">
 
               {/* DISCLAIMER */}
+              {/* DISCLAIMER */}
               <div className="disclaimer-box">
                 <input
                   type="checkbox"
                   checked={agreed}
                   onChange={() => setAgreed(!agreed)}
                 />
-                <label>I agree to the terms</label>
+
+                <label>
+                  I have read and agree to the terms & disclaimer
+                </label>
               </div>
 
               <div className="disclaimer-text">
-                <p>Ensure your data is correct before upload</p>
-                <p>Do not upload confidential data without permission</p>
-                <p>System processes automatically</p>
+
+                <p className="disclaimer-heading">
+                  IMPORT FILE — GENERAL GUIDELINES
+                </p>
+
+                <p>
+                  • The uploaded file must match the selected conversion type and format.
+                </p>
+
+                <p>
+                  • Users are responsible for verifying the correctness and completeness of the data before upload.
+                </p>
+
+                <p>
+                  • Files containing invalid structure, unreadable content, unsupported formatting, or improper data arrangement may not be processed correctly.
+                </p>
+
+                <p>
+                  • Password protected, encrypted, locked, or restricted files are not supported.
+                </p>
+
+                <p>
+                  • Ensure that required data reading areas, rows, columns, and cells are accessible and not protected.
+                </p>
+
+                <p>
+                  • The uploaded file may be automatically deleted from the system after processing completion or session exit.
+                </p>
+
+                <p className="disclaimer-heading">
+                  EXCEL FILE SPECIFIC GUIDELINES
+                </p>
+
+                <p>
+                  • Only the first worksheet of the Excel file will be considered for data conversion.
+                </p>
+
+                <p>
+                  • Additional sheets/tabs within the workbook will be ignored.
+                </p>
+
+                <p>
+                  • The first row of the worksheet will be treated as column headers and excluded from record count.
+                </p>
+
+                <p>
+                  • Proper and meaningful column headers are recommended for accurate processing.
+                </p>
+
+                <p className="disclaimer-heading">
+                  OUTPUT FILE & LIABILITY DISCLAIMER
+                </p>
+
+                <p>
+                  • Output files are generated automatically by the system based on uploaded data and selected conversion options.
+                </p>
+
+                <p>
+                  • Users must independently verify the accuracy, completeness, formatting, and usability of the generated output before official or commercial use.
+                </p>
+
+                <p>
+                  • We do not guarantee error-free processing for all file structures, formats, or data conditions.
+                </p>
+
+                <p>
+                  • We shall not be responsible or liable for any direct, indirect, commercial, financial, technical, operational, or personal loss/damage arising from use of the generated output files.
+                </p>
+
+                <p>
+                  • Uploading confidential, regulated, financial, legal, medical, or sensitive data is solely at the user's discretion and responsibility.
+                </p>
+
               </div>
 
               {/* ACTION BUTTONS */}
