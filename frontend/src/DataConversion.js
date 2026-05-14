@@ -3,16 +3,42 @@ import "./App.css";
 import * as XLSX from "xlsx";
 
 export default function DataConversion() {
-  const [subTab, setSubTab] = useState("manual");
+
+  /* =========================================================
+     STATES
+  ========================================================= */
+
   const [conversionType, setConversionType] = useState("");
+
   const [file, setFile] = useState(null);
-  const [recordCount, setRecordCount] = useState(0);
-  const [previewData, setPreviewData] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [price, setPrice] = useState(0);
-  const [agreed, setAgreed] = useState(false);
+
   const [sheetName, setSheetName] = useState("");
 
+  const [recordCount, setRecordCount] = useState(0);
+
+  const [columns, setColumns] = useState([]);
+
+  const [previewData, setPreviewData] = useState([]);
+
+  const [price, setPrice] = useState(0);
+
+  const [agreed, setAgreed] = useState(false);
+
+  /* VALIDATION STATES */
+
+  const [validationStatus, setValidationStatus] = useState("");
+
+  const [validationProgress, setValidationProgress] = useState(0);
+
+  const [currentValidationStep, setCurrentValidationStep] = useState("");
+
+  const [validationErrors, setValidationErrors] = useState([]);
+
+  const [validationWarnings, setValidationWarnings] = useState([]);
+
+  const [validationSuccess, setValidationSuccess] = useState([]);
+
+  const [isValidating, setIsValidating] = useState(false);
 
   const FREE_LIMIT = 50;
 
@@ -22,394 +48,700 @@ export default function DataConversion() {
     { min: 501, max: 2000, price: 299 }
   ];
 
-  const showPaid = recordCount > FREE_LIMIT;
-
   const fileInputRef = useRef();
 
+  /* =========================================================
+     FILE TYPES
+  ========================================================= */
+
+  const getAcceptedTypes = () => {
+
+    if (
+      conversionType === "excel-csv" ||
+      conversionType === "excel-txt"
+    ) {
+      return ".xls,.xlsx";
+    }
+
+    if (conversionType === "csv-excel") {
+      return ".csv";
+    }
+
+    return "*";
+  };
+
+  /* =========================================================
+     VALIDATION ENGINE
+  ========================================================= */
+
+  const runValidation = async (
+    workbook,
+    jsonData,
+    headers,
+    uploadedFile
+  ) => {
+
+    setIsValidating(true);
+
+    setValidationErrors([]);
+    setValidationWarnings([]);
+    setValidationSuccess([]);
+
+    let errors = [];
+    let warnings = [];
+    let success = [];
+
+    /* STEP 1 */
+
+    setCurrentValidationStep("Checking file existence...");
+    setValidationProgress(10);
+
+    if (!uploadedFile) {
+      errors.push("No file selected.");
+    } else {
+      success.push("File uploaded successfully.");
+    }
+
+    /* STEP 2 */
+
+    setCurrentValidationStep("Checking workbook...");
+    setValidationProgress(25);
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    if (!workbook.SheetNames.length) {
+      errors.push("No worksheet found.");
+    } else {
+      success.push(
+        `${workbook.SheetNames.length} worksheet(s) detected.`
+      );
+    }
+
+    /* STEP 3 */
+
+    setCurrentValidationStep("Checking headers...");
+    setValidationProgress(45);
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    if (headers.length === 0) {
+      errors.push("Header row missing.");
+    } else {
+      success.push(`${headers.length} columns detected.`);
+    }
+
+    /* DUPLICATE HEADERS */
+
+    const duplicateHeaders = headers.filter(
+      (item, index) => headers.indexOf(item) !== index
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    if (duplicateHeaders.length > 0) {
+      warnings.push("Duplicate column headers detected.");
+    }
+
+    /* STEP 4 */
+
+    setCurrentValidationStep("Checking records...");
+    setValidationProgress(65);
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    if (jsonData.length === 0) {
+      errors.push("No data rows found.");
+    } else {
+      success.push(`${jsonData.length} records ready.`);
+    }
+
+    /* LARGE FILE WARNING */
+
+    if (jsonData.length > 5000) {
+      warnings.push(
+        "Large file detected. Processing may take longer."
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    /* BLANK ROW CHECK */
+
+    const blankRows = jsonData.filter((row) =>
+      Object.values(row).every((value) => value === "")
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    if (blankRows.length > 0) {
+      warnings.push(
+        `${blankRows.length} blank row(s) detected.`
+      );
+    }
+
+    /* STEP 5 */
+
+    setCurrentValidationStep("Finalizing validation...");
+    setValidationProgress(100);
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    /* FINAL STATUS */
+
+    if (errors.length > 0) {
+      setValidationStatus("failed");
+    } else if (warnings.length > 0) {
+      setValidationStatus("warning");
+    } else {
+      setValidationStatus("success");
+    }
+
+    setValidationErrors(errors);
+
+    setValidationWarnings(warnings);
+
+    setValidationSuccess(success);
+
+    setIsValidating(false);
+  };
+
+  /* =========================================================
+     FILE HANDLER
+  ========================================================= */
+
   const handleFile = (e) => {
+
     const f = e.target.files[0];
+
     if (!f) return;
 
     setFile({
       name: f.name,
-      //path: e.target.value
       path: f.name
     });
 
     const reader = new FileReader();
 
-    reader.onload = (evt) => {
-      const data = evt.target.result;
+    reader.onload = async (evt) => {
 
-      const workbook = XLSX.read(data, { type: "binary" });
+      try {
 
-      const firstSheetName = workbook.SheetNames[0];
+        const data = evt.target.result;
 
-      setSheetName(firstSheetName);
+        const workbook = XLSX.read(data, {
+          type: "binary"
+        });
 
-      const worksheet = workbook.Sheets[firstSheetName];
+        const firstSheetName = workbook.SheetNames[0];
 
-      
+        setSheetName(firstSheetName);
 
-      //const jsonData = XLSX.utils.sheet_to_json(worksheet);
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-        defval: ""
-      });
+        const worksheet =
+          workbook.Sheets[firstSheetName];
 
-      // RECORD COUNT
-      setRecordCount(jsonData.length);
+        const jsonData =
+          XLSX.utils.sheet_to_json(worksheet, {
+            defval: ""
+          });
 
-      // PREVIEW DATA (FIRST 10 ROWS)
-      setPreviewData(jsonData.slice(0, 20));
+        /* PREVIEW */
 
-      // COLUMN HEADERS
-      if (jsonData.length > 0) {
-        setColumns(Object.keys(jsonData[0]));
-      }
+        setPreviewData(jsonData.slice(0, 20));
 
-      // PRICE CALCULATION
-      let calculatedPrice = 0;
+        /* HEADERS */
 
-      pricingRules.forEach((rule) => {
-        if (
-          jsonData.length >= rule.min &&
-          jsonData.length <= rule.max
-        ) {
-          calculatedPrice = rule.price;
+        let detectedHeaders = [];
+
+        if (jsonData.length > 0) {
+          detectedHeaders =
+            Object.keys(jsonData[0]);
+
+          setColumns(detectedHeaders);
         }
-      });
 
-      setPrice(calculatedPrice);
+        /* RECORDS */
+
+        setRecordCount(jsonData.length);
+
+        /* PRICE */
+
+        let calculatedPrice = 0;
+
+        pricingRules.forEach((rule) => {
+
+          if (
+            jsonData.length >= rule.min &&
+            jsonData.length <= rule.max
+          ) {
+            calculatedPrice = rule.price;
+          }
+        });
+
+        setPrice(calculatedPrice);
+
+        /* RUN VALIDATION */
+
+        await runValidation(
+          workbook,
+          jsonData,
+          detectedHeaders,
+          f
+        );
+
+      } catch (error) {
+
+        setValidationStatus("failed");
+
+        setValidationErrors([
+          "Unable to read file or invalid format."
+        ]);
+
+        setValidationWarnings([]);
+
+        setValidationSuccess([]);
+      }
     };
 
     reader.readAsBinaryString(f);
   };
 
-  const removeFile = () => {
-    setFile(null);
-
-    setPreviewData([]);
-    setColumns([]);
-    setRecordCount(0);
-    setPrice(0);
-    setSheetName("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+  /* =========================================================
+     RESET
+  ========================================================= */
 
   const resetAll = () => {
-    setFile(null);
+
     setConversionType("");
-    setAgreed(false);
+
+    setFile(null);
+
+    setSheetName("");
+
+    setRecordCount(0);
+
+    setColumns([]);
 
     setPreviewData([]);
-    setColumns([]);
-    setRecordCount(0);
+
     setPrice(0);
-    setSheetName("");
+
+    setAgreed(false);
+
+    setValidationStatus("");
+
+    setValidationProgress(0);
+
+    setCurrentValidationStep("");
+
+    setValidationErrors([]);
+
+    setValidationWarnings([]);
+
+    setValidationSuccess([]);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const getAcceptedTypes = () => {
-    if (conversionType === "excel-csv" || conversionType === "excel-txt")
-      return ".xls,.xlsx";
-    if (conversionType === "csv-excel")
-      return ".csv";
-    return "*";
-  };
+  const showPaid =
+    validationStatus !== "failed" &&
+    recordCount > FREE_LIMIT;
+
+  const processingAllowed =
+    validationStatus === "success" ||
+    validationStatus === "warning";
+
+  /* =========================================================
+     UI
+  ========================================================= */
 
   return (
-    <div>
 
-      {/* SUB TABS */}
-      <div className="subtabs">
-        <button className={subTab === "manual" ? "active" : ""} onClick={() => setSubTab("manual")}>User Manual</button>
-        <button className={subTab === "conversion" ? "active" : ""} onClick={() => setSubTab("conversion")}>Go Data Conversion</button>
-        <button className={subTab === "custom" ? "active" : ""} onClick={() => setSubTab("custom")}>Customised Services</button>
-      </div>
+    <div className="workspace-container">
 
-      {/* USER MANUAL */}
-      {subTab === "manual" && (
-        <div className="content">
-          <h3>User Manual</h3>
-          <p>Select conversion → Upload → Process</p>
-        </div>
-      )}
+      {/* =====================================================
+          TOP DASHBOARD
+      ===================================================== */}
 
-      {/* CUSTOM */}
-      {subTab === "custom" && (
-        <div className="content">
-          <h3>Customised Services</h3>
-          <p>Request for tailored solutions</p>
-        </div>
-      )}
+      <div className="top-grid">
 
-      {/* MAIN */}
-      {subTab === "conversion" && (
-        <div className="content">
+        {/* =========================================
+            CONVERSION PANEL
+        ========================================= */}
 
-          {/* CONVERSION TYPE */}
-          <div className="panel radio-group">
+        <div className="dashboard-panel">
 
-            <h3 className="preview-title">
-              Select Data Conversion Type
-            </h3>
+          <h3>Select Conversion Type</h3>
+
+          <div className="radio-group">
 
             <label>
-              <input type="radio" name="conversion" checked={conversionType === "excel-csv"} onChange={() => setConversionType("excel-csv")} />
-              Excel → CSV (Convert Excel to CSV)
+              <input
+                type="radio"
+                name="conversion"
+                checked={conversionType === "excel-csv"}
+                onChange={() =>
+                  setConversionType("excel-csv")
+                }
+              />
+
+              Excel → CSV
             </label>
 
             <label>
-              <input type="radio" name="conversion" checked={conversionType === "excel-txt"} onChange={() => setConversionType("excel-txt")} />
-              Excel → TXT (Convert Excel to Text)
+              <input
+                type="radio"
+                name="conversion"
+                checked={conversionType === "excel-txt"}
+                onChange={() =>
+                  setConversionType("excel-txt")
+                }
+              />
+
+              Excel → TXT
             </label>
 
             <label>
-              <input type="radio" name="conversion" checked={conversionType === "csv-excel"} onChange={() => setConversionType("csv-excel")} />
-              CSV → Excel (Convert CSV to Excel)
+              <input
+                type="radio"
+                name="conversion"
+                checked={conversionType === "csv-excel"}
+                onChange={() =>
+                  setConversionType("csv-excel")
+                }
+              />
+
+              CSV → Excel
             </label>
 
           </div>
 
-          {/* FILE UPLOAD */}
-          {conversionType && (
-            <div className="panel">
+        </div>
 
-              <div className="buttons">
+        {/* =========================================
+            UPLOAD PANEL
+        ========================================= */}
 
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  Choose File
-                </button>
+        <div className="dashboard-panel">
 
-                {file && (
-                  <button className="btn neutral" onClick={removeFile}>
-                    Remove File
-                  </button>
-                )}
+          <h3>Upload File</h3>
 
-              </div>
+          <div className="buttons">
 
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                onChange={handleFile}
-                accept={getAcceptedTypes()}
-              />
+            <button
+              type="button"
+              className="btn primary"
+              disabled={!conversionType}
+              onClick={() =>
+                fileInputRef.current.click()
+              }
+            >
+              Choose File
+            </button>
 
-              {file && (
-                <div className="file-info">
-                  <p>
-                    <b>Import File:</b> {file.path}
-
-                    {sheetName && (
-                      <span className="small-note">
-                        {" "} (Worksheet: {sheetName})
-                      </span>
-                    )}
-                  </p>
-
-                  <p>
-                    <b>No. of Records:</b> {recordCount}
-                    <span className="small-note">
-                      {" "} (1st Row Considered as Header row excluded in Row Count)
-                    </span>
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* DATA PREVIEW */}
-          {previewData.length > 0 && (
-            <div className="panel">
-
-              <h3 className="preview-title">
-                Preview Data
-                <span className="small-note"> (Max 20 records)</span>
-              </h3>
-
-              <div className="table-container">
-
-                <table className="preview-table">
-
-                  <thead>
-                    <tr>
-                      {columns.map((col) => (
-                        <th key={col}>{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {previewData.map((row, index) => (
-                      <tr key={index}>
-                        {columns.map((col) => (
-                          <td key={col}>{row[col]}</td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* DISCLAIMER + BUTTONS */}
-          {file && (
-            <div className="panel">
-
-              {/* DISCLAIMER */}
-              {/* DISCLAIMER */}
-              <div className="disclaimer-box">
-                <input
-                  type="checkbox"
-                  checked={agreed}
-                  onChange={() => setAgreed(!agreed)}
-                />
-
-                <label>
-                  I have read and agree to the terms & disclaimer
-                </label>
-              </div>
-
-              <div className="disclaimer-text">
-
-                <p className="disclaimer-heading">
-                  IMPORT FILE — GENERAL GUIDELINES
-                </p>
-
-                <p>
-                  • The uploaded file must match the selected conversion type and format.
-                </p>
-
-                <p>
-                  • Users are responsible for verifying the correctness and completeness of the data before upload.
-                </p>
-
-                <p>
-                  • Files containing invalid structure, unreadable content, unsupported formatting, or improper data arrangement may not be processed correctly.
-                </p>
-
-                <p>
-                  • Password protected, encrypted, locked, or restricted files are not supported.
-                </p>
-
-                <p>
-                  • Ensure that required data reading areas, rows, columns, and cells are accessible and not protected.
-                </p>
-
-                <p>
-                  • The uploaded file may be automatically deleted from the system after processing completion or session exit.
-                </p>
-
-                <p className="disclaimer-heading">
-                  EXCEL FILE SPECIFIC GUIDELINES
-                </p>
-
-                <p>
-                  • Only the first worksheet of the Excel file will be considered for data conversion.
-                </p>
-
-                <p>
-                  • Additional sheets/tabs within the workbook will be ignored.
-                </p>
-
-                <p>
-                  • The first row of the worksheet will be treated as column headers and excluded from record count.
-                </p>
-
-                <p>
-                  • Proper and meaningful column headers are recommended for accurate processing.
-                </p>
-
-                <p className="disclaimer-heading">
-                  OUTPUT FILE & LIABILITY DISCLAIMER
-                </p>
-
-                <p>
-                  • Output files are generated automatically by the system based on uploaded data and selected conversion options.
-                </p>
-
-                <p>
-                  • Users must independently verify the accuracy, completeness, formatting, and usability of the generated output before official or commercial use.
-                </p>
-
-                <p>
-                  • We do not guarantee error-free processing for all file structures, formats, or data conditions.
-                </p>
-
-                <p>
-                  • We shall not be responsible or liable for any direct, indirect, commercial, financial, technical, operational, or personal loss/damage arising from use of the generated output files.
-                </p>
-
-                <p>
-                  • Uploading confidential, regulated, financial, legal, medical, or sensitive data is solely at the user's discretion and responsibility.
-                </p>
-
-              </div>
-
-              {/* ACTION BUTTONS */}
+            {file && (
               <button
-                className="btn primary"
-                disabled={!agreed}
-                onClick={() => {
-                  if (!agreed) return;
+                className="btn neutral"
+                onClick={resetAll}
+              >
+                Remove File
+              </button>
+            )}
 
-                  const confirmAction = window.confirm("Proceed with free processing?");
+          </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFile}
+            accept={getAcceptedTypes()}
+          />
+
+          {file && (
+
+            <div className="file-info">
+
+              <p>
+                <b>File:</b> {file.path}
+              </p>
+
+              <p>
+                <b>Worksheet:</b> {sheetName}
+              </p>
+
+              <p>
+                <b>Records:</b> {recordCount}
+              </p>
+
+            </div>
+          )}
+
+        </div>
+
+        {/* =========================================
+            VALIDATION PANEL
+        ========================================= */}
+
+        <div className="dashboard-panel validation-panel">
+
+          <div className="validation-header">
+
+            <h3 className="preview-title">
+              Upload File Validation Status
+            </h3>
+
+            {(validationErrors.length > 0 || validationWarnings.length > 0) && (
+              <button className="assist-btn">
+                Request Assistance
+              </button>
+            )}
+
+          </div>
+
+          {/* PROGRESS */}
+
+          {isValidating && (
+
+            <>
+              <div className="progress-bar">
+
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${validationProgress}%`
+                  }}
+                ></div>
+
+              </div>
+
+              <p className="small-note">
+                {currentValidationStep}
+              </p>
+            </>
+          )}
+
+          {/* STATUS */}
+
+          {validationStatus && (
+
+            <div className={`status-box ${validationStatus}`}>
+
+              <p>
+                <b>Status:</b>{" "}
+
+                {validationStatus.toUpperCase()}
+              </p>
+
+            </div>
+          )}
+
+          {/* SUCCESS */}
+
+          {validationSuccess.length > 0 && (
+
+            <div>
+
+              <h4 className="success-title">
+                Success
+              </h4>
+
+              {validationSuccess.map((msg, index) => (
+                <p key={index}>✓ {msg}</p>
+              ))}
+
+            </div>
+          )}
+
+          {/* WARNINGS */}
+
+          {validationWarnings.length > 0 && (
+
+            <div>
+
+              <h4 className="warning-title">
+                Warnings
+              </h4>
+
+              {validationWarnings.map((msg, index) => (
+                <p key={index}>⚠ {msg}</p>
+
+              ))}
+
+            </div>
+          )}
+
+          {/* ERRORS */}
+
+          {validationErrors.length > 0 && (
+
+            <div>
+
+              <h4 className="error-title">
+                Errors
+              </h4>
+
+              {validationErrors.map((msg, index) => (
+                <p key={index}>✖ {msg}</p>
+              ))}
+
+            </div>
+          )}
+
+        </div>
+
+      </div>
+
+      {/* =====================================================
+          PREVIEW TABLE
+      ===================================================== */}
+
+      {previewData.length > 0 && (
+
+        <div className="panel preview-panel">
+
+          <h3>
+            Preview Data
+            <span className="small-note">
+              {" "} (Max 20 records)
+            </span>
+          </h3>
+
+          <div className="table-container">
+
+            <table className="preview-table">
+
+              <thead>
+
+                <tr>
+
+                  {columns.map((col) => (
+                    <th key={col}>{col}</th>
+                  ))}
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {previewData.map((row, index) => (
+
+                  <tr key={index}>
+
+                    {columns.map((col) => (
+                      <td key={col}>
+                        {row[col]}
+                      </td>
+                    ))}
+
+                  </tr>
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* =====================================================
+          DISCLAIMER + ACTIONS
+      ===================================================== */}
+
+      {file && (
+
+        <div className="panel">
+
+          <div className="disclaimer-box">
+
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={() =>
+                setAgreed(!agreed)
+              }
+            />
+
+            <label>
+              I agree to the terms & disclaimer
+            </label>
+
+          </div>
+
+          <div className="action-buttons">
+
+            <button
+              className="btn primary"
+              disabled={
+                !agreed ||
+                !processingAllowed
+              }
+              onClick={() => {
+
+                const confirmAction =
+                  window.confirm(
+                    "Proceed with free processing?"
+                  );
+
+                if (confirmAction) {
+                  alert(
+                    "Free processing started (demo)"
+                  );
+                }
+              }}
+            >
+
+              {recordCount <= 50
+                ? "Convert Data For Free"
+                : "Try 50 Records Free"}
+
+            </button>
+
+            {showPaid && (
+
+              <button
+                className="btn secondary"
+                disabled={
+                  !agreed ||
+                  !processingAllowed
+                }
+                onClick={() => {
+
+                  const confirmAction =
+                    window.confirm(
+                      `Proceed with paid processing (₹${price})?`
+                    );
+
                   if (confirmAction) {
-                    alert("Free processing started (demo)");
+                    alert(
+                      "Paid processing started (demo)"
+                    );
                   }
                 }}
               >
-                {recordCount <= 50
-                  ? "Convert Data For Free"
-                  : "Try 50 Records Free before you pay"}
+
+                Convert Full Data For ₹{price}/-
+
               </button>
+            )}
 
-              {/* PAID BUTTON */}
-              {showPaid && (
-                <button
-                  className="btn secondary"
-                  disabled={!agreed}
-                  onClick={() => {
-                    if (!agreed) return;
+            <button className="btn neutral">
+              Request Assistance
+            </button>
 
-                    const confirmAction = window.confirm("Proceed with full data conversion (₹99)?");
-                    if (confirmAction) {
-                      alert("Paid processing started (demo)");
-                    }
-                  }}
-                >
-                  Convert full data for Rs.{price}/-
-                </button>
-              )}
+            <button className="btn neutral">
+              Customised Service
+            </button>
 
-            </div>
-
-
-          )}
-
-          {/* RESET / EXIT */}
-          <div className="panel">
-            <button className="btn neutral" onClick={resetAll}>Reset</button>
-            <button className="btn neutral" onClick={() => window.location.reload()}>Exit</button>
           </div>
 
         </div>
-      )
-      }
-    </div >
+      )}
+
+    </div>
   );
 }
