@@ -99,7 +99,7 @@ export default function DataConversion() {
     if (!uploadedFile) {
       errors.push("No file selected.");
     } else {
-      success.push("File uploaded successfully.");
+      //      success.push("File uploaded successfully.");
     }
 
     /* STEP 2 */
@@ -113,7 +113,7 @@ export default function DataConversion() {
       errors.push("No worksheet found.");
     } else {
       success.push(
-        `${workbook.SheetNames.length} worksheet(s) detected.`
+        //        `${workbook.SheetNames.length} worksheet(s) detected.`
       );
     }
 
@@ -464,15 +464,21 @@ export default function DataConversion() {
             <div className="file-info">
 
               <p>
+                ✓ File uploaded successfully
+              </p>
+
+              <p>
+                ✓ {sheetName
+                  ? `Worksheet: ${sheetName}`
+                  : "Worksheet detected"}
+              </p>
+
+              <p>
+                ✓ {recordCount} records detected
+              </p>
+
+              <p>
                 <b>File:</b> {file.path}
-              </p>
-
-              <p>
-                <b>Worksheet:</b> {sheetName}
-              </p>
-
-              <p>
-                <b>Records:</b> {recordCount}
               </p>
 
             </div>
@@ -492,11 +498,17 @@ export default function DataConversion() {
               Upload File Validation Status
             </h3>
 
-            {(validationErrors.length > 0 || validationWarnings.length > 0) && (
-              <button className="assist-btn">
-                Request Assistance
-              </button>
-            )}
+            {(validationErrors.length > 0 ||
+              validationWarnings.length > 0) && (
+
+                <div className="assist-link">
+                  Having issues with your import file?
+                  <span>
+                    {" "}
+                    Request File Repair Assistance
+                  </span>
+                </div>
+              )}
 
           </div>
 
@@ -729,13 +741,9 @@ export default function DataConversion() {
               </button>
             )}
 
-            <button className="btn neutral">
-              Request Assistance
-            </button>
-
-            <button className="btn neutral">
-              Customised Service
-            </button>
+            <div className="custom-service-link">
+              Need complex or customised data conversion?
+            </div>
 
           </div>
 
